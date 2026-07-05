@@ -220,9 +220,14 @@ btnDlIphone.addEventListener('click', () => {
     downloadCanvas(1290, 2796, generators[state.theme], getColors(), state.seed, `wallpaper-iphone-${state.theme}-${state.seed}.png`);
 });
 
-// Initialize on load to ensure DOM is perfectly sized
-window.addEventListener('load', () => {
+function init() {
     lucide.createIcons();
     updateActiveUI();
     triggerUpdate();
-});
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    init();
+} else {
+    window.addEventListener('load', init);
+}
