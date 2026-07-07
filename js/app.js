@@ -72,6 +72,20 @@ const savedModalContent = document.getElementById('saved-modal-content');
 const customPaletteEditor = document.getElementById('custom-palette-editor');
 const customBgColor = document.getElementById('custom-bg-color');
 const customAccentColors = document.querySelectorAll('.custom-accent-color');
+const customBgColorPicker = document.querySelector('.custom-bg-color-picker');
+const customAccentColorPickers = document.querySelectorAll('.custom-accent-color-picker');
+
+function updateCustomPaletteUI() {
+    if (customBgColorPicker) customBgColorPicker.value = state.customPalette.bg;
+    if (customBgColor) customBgColor.value = state.customPalette.bg.toUpperCase();
+    
+    customAccentColorPickers.forEach((picker, i) => {
+        if (state.customPalette.colors[i]) picker.value = state.customPalette.colors[i];
+    });
+    customAccentColors.forEach((input, i) => {
+        if (state.customPalette.colors[i]) input.value = state.customPalette.colors[i].toUpperCase();
+    });
+}
 
 function getColors() {
     if (state.palette === 'custom') {
@@ -203,19 +217,36 @@ paletteBtns.forEach(btn => {
     });
 });
 
-customBgColor.addEventListener('input', (e) => {
-    state.customPalette.bg = e.target.value;
-    updateHeartUI();
-    triggerUpdate();
-});
-
-customAccentColors.forEach((input, index) => {
-    input.addEventListener('input', (e) => {
-        state.customPalette.colors[index] = e.target.value;
+const handleBgChange = (val) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        state.customPalette.bg = val;
+        updateCustomPaletteUI();
         updateHeartUI();
         triggerUpdate();
-    });
+    }
+};
+
+customBgColor.addEventListener('input', (e) => handleBgChange(e.target.value));
+if (customBgColorPicker) customBgColorPicker.addEventListener('input', (e) => handleBgChange(e.target.value));
+
+const handleAccentChange = (val, index) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        state.customPalette.colors[index] = val;
+        updateCustomPaletteUI();
+        updateHeartUI();
+        triggerUpdate();
+    }
+};
+
+customAccentColors.forEach((input, index) => {
+    input.addEventListener('input', (e) => handleAccentChange(e.target.value, index));
 });
+
+if (customAccentColorPickers) {
+    customAccentColorPickers.forEach((picker, index) => {
+        picker.addEventListener('input', (e) => handleAccentChange(e.target.value, index));
+    });
+}
 
 themeToggle.addEventListener('click', () => {
     state.isDark = !state.isDark;
@@ -230,8 +261,7 @@ btnGenerate.addEventListener('click', () => {
         const newColors = generateRandomPalette(state.isDark);
         state.palette = 'custom';
         state.customPalette = newColors;
-        customBgColor.value = newColors.bg;
-        customAccentColors.forEach((input, i) => input.value = newColors.colors[i]);
+        updateCustomPaletteUI();
         updateActiveUI();
     } else {
         // Generate entirely new pattern variation
@@ -285,10 +315,7 @@ function openSavedModal() {
         
         // Sync custom palette inputs
         if (state.palette === 'custom' && state.customPalette) {
-            customBgColor.value = state.customPalette.bg;
-            customAccentColors.forEach((input, i) => {
-                if (state.customPalette.colors[i]) input.value = state.customPalette.colors[i];
-            });
+            updateCustomPaletteUI();
         }
         
         updateActiveUI();

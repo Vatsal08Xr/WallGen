@@ -48,6 +48,20 @@ const dlIphoneBtn = document.getElementById('mobile-btn-dl-iphone');
 const customPaletteEditor = document.getElementById('mobile-custom-palette-editor');
 const customBgColor = document.getElementById('mobile-custom-bg-color');
 const customAccentColors = document.querySelectorAll('.mobile-custom-accent-color');
+const customBgColorPicker = document.querySelector('.mobile-custom-bg-color-picker');
+const customAccentColorPickers = document.querySelectorAll('.mobile-custom-accent-color-picker');
+
+function updateCustomPaletteUI() {
+    if (customBgColorPicker) customBgColorPicker.value = state.customPalette.bg;
+    if (customBgColor) customBgColor.value = state.customPalette.bg.toUpperCase();
+    
+    customAccentColorPickers.forEach((picker, i) => {
+        if (state.customPalette.colors[i]) picker.value = state.customPalette.colors[i];
+    });
+    customAccentColors.forEach((input, i) => {
+        if (state.customPalette.colors[i]) input.value = state.customPalette.colors[i].toUpperCase();
+    });
+}
 const btnLockPattern = document.getElementById('mobile-btn-lock-pattern');
 const btnSaveWallpaper = document.getElementById('mobile-btn-save-wallpaper');
 const btnOpenSaved = document.getElementById('mobile-btn-open-saved');
@@ -170,19 +184,36 @@ document.querySelectorAll('#mobile-palette-grid .palette-btn').forEach(btn => {
     });
 });
 
-customBgColor?.addEventListener('input', e => {
-    state.customPalette.bg = e.target.value;
-    updateHeartUI();
-    triggerUpdate();
-});
-
-customAccentColors.forEach((input, i) => {
-    input.addEventListener('input', e => {
-        state.customPalette.colors[i] = e.target.value;
+const handleBgChange = (val) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        state.customPalette.bg = val;
+        updateCustomPaletteUI();
         updateHeartUI();
         triggerUpdate();
-    });
+    }
+};
+
+if (customBgColor) customBgColor.addEventListener('input', (e) => handleBgChange(e.target.value));
+if (customBgColorPicker) customBgColorPicker.addEventListener('input', (e) => handleBgChange(e.target.value));
+
+const handleAccentChange = (val, index) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+        state.customPalette.colors[index] = val;
+        updateCustomPaletteUI();
+        updateHeartUI();
+        triggerUpdate();
+    }
+};
+
+customAccentColors.forEach((input, i) => {
+    input.addEventListener('input', e => handleAccentChange(e.target.value, i));
 });
+
+if (customAccentColorPickers) {
+    customAccentColorPickers.forEach((picker, i) => {
+        picker.addEventListener('input', e => handleAccentChange(e.target.value, i));
+    });
+}
 
 mobileThemeToggle?.addEventListener('click', () => {
     state.isDark = !state.isDark;
@@ -197,10 +228,7 @@ generateBtn?.addEventListener('click', () => {
         const newColors = generateRandomPalette(state.isDark);
         state.palette = 'custom';
         state.customPalette = newColors;
-        if(customBgColor) customBgColor.value = newColors.bg;
-        customAccentColors.forEach((input, i) => {
-            if(input) input.value = newColors.colors[i];
-        });
+        updateCustomPaletteUI();
         updateUI();
     } else {
         state.seed = Math.random().toString(36).substring(2, 15);
@@ -258,10 +286,7 @@ btnOpenSaved?.addEventListener('click', () => {
         
         // Sync custom palette inputs
         if (state.palette === 'custom' && state.customPalette) {
-            if(customBgColor) customBgColor.value = state.customPalette.bg;
-            customAccentColors.forEach((input, i) => {
-                if (state.customPalette.colors[i]) input.value = state.customPalette.colors[i];
-            });
+            updateCustomPaletteUI();
         }
         
         updateUI();
