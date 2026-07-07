@@ -56,8 +56,8 @@ const pickrOptions = {
         opacity: false,
         hue: true,
         interaction: {
-            hex: true,
-            rgba: true,
+            hex: false,
+            rgba: false,
             hsla: false,
             input: true,
             clear: false,
@@ -256,7 +256,11 @@ document.querySelectorAll('#mobile-palette-grid .palette-btn').forEach(btn => {
     });
 });
 
-const handleBgChange = (val) => {
+const handleBgChange = (val, inputEl = null) => {
+    if (val.length > 0 && !val.startsWith('#')) {
+        val = '#' + val;
+        if (inputEl) inputEl.value = val;
+    }
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
         state.customPalette.bg = val;
         updateCustomPaletteUI();
@@ -265,9 +269,13 @@ const handleBgChange = (val) => {
     }
 };
 
-if (customBgColor) customBgColor.addEventListener('input', (e) => handleBgChange(e.target.value));
+if (customBgColor) customBgColor.addEventListener('input', (e) => handleBgChange(e.target.value, e.target));
 
-const handleAccentChange = (val, index) => {
+const handleAccentChange = (val, index, inputEl = null) => {
+    if (val.length > 0 && !val.startsWith('#')) {
+        val = '#' + val;
+        if (inputEl) inputEl.value = val;
+    }
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
         state.customPalette.colors[index] = val;
         updateCustomPaletteUI();
@@ -277,7 +285,7 @@ const handleAccentChange = (val, index) => {
 };
 
 customAccentColors.forEach((input, i) => {
-    input.addEventListener('input', e => handleAccentChange(e.target.value, i));
+    input.addEventListener('input', e => handleAccentChange(e.target.value, i, e.target));
 });
 
 mobileThemeToggle?.addEventListener('click', () => {
