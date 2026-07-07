@@ -45,6 +45,16 @@ let state = {
     isLocked: false
 };
 
+try {
+    const saved = localStorage.getItem('wallgen_session');
+    if (saved) {
+        state = { ...state, ...JSON.parse(saved) };
+    }
+} catch(e) {}
+
+document.documentElement.classList.toggle('dark', state.isDark);
+
+
 const canvas = document.getElementById('preview-canvas');
 const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const wrapper = document.getElementById('canvas-wrapper');
@@ -209,6 +219,8 @@ function updateHeartUI() {
 
 let renderTimeout;
 function triggerUpdate() {
+    try { localStorage.setItem('wallgen_session', JSON.stringify(state)); } catch(e) {}
+    
     const previewRatio = state.previewMode === 'desktop' ? (16 / 9) : (1170 / 2532);
     const containerRect = outerContainer.getBoundingClientRect();
     

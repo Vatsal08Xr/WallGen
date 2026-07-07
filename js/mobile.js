@@ -128,6 +128,15 @@ const state = {
     isLocked: false
 };
 
+try {
+    const saved = localStorage.getItem('wallgen_session');
+    if (saved) {
+        Object.assign(state, JSON.parse(saved));
+    }
+} catch(e) {}
+
+document.documentElement.classList.toggle('dark', state.isDark);
+
 
 
 // ----- Colors -----
@@ -190,6 +199,8 @@ function updateHeartUI() {
 // ----- Render -----
 let renderTimeout;
 function triggerUpdate() {
+    try { localStorage.setItem('wallgen_session', JSON.stringify(state)); } catch(e) {}
+
     const ratio = state.previewMode === 'desktop' ? (16 / 9) : (1170 / 2532);
     const rect = outer.getBoundingClientRect();
     const availW = rect.width;
