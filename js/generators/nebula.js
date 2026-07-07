@@ -9,7 +9,19 @@ export function drawNebula(ctx, width, height, colors, rng) {
     // Reduce number of clouds slightly for performance, radial gradient is rich enough
     const numClouds = 150; 
     
-    ctx.globalCompositeOperation = 'screen';
+    function isLightColor(hex) {
+        if (!hex) return true;
+        if (hex.length === 9) hex = hex.substring(0, 7);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return true;
+        const r = parseInt(result[1], 16);
+        const g = parseInt(result[2], 16);
+        const b = parseInt(result[3], 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) > 128;
+    }
+    
+    const isLightBg = isLightColor(colors.bg);
+    ctx.globalCompositeOperation = isLightBg ? 'multiply' : 'screen';
     
     const zOffset = rng() * 100;
     
@@ -50,7 +62,7 @@ export function drawNebula(ctx, width, height, colors, rng) {
     
     // Draw starfield
     const numStars = 600;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = isLightBg ? '#000000' : '#ffffff';
     for (let i=0; i<numStars; i++) {
         if(rng() > 0.3) continue;
         ctx.beginPath();

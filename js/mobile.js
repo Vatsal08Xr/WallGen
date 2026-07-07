@@ -148,8 +148,19 @@ function updateUI() {
         btn.classList.toggle('active', btn.dataset.palette === state.palette);
     });
 
-    if (state.palette === 'custom') customPaletteEditor?.classList.remove('hidden');
-    else customPaletteEditor?.classList.add('hidden');
+    if (state.palette === 'custom') {
+        customPaletteEditor?.classList.remove('hidden');
+        if (state.theme === 'topography') {
+            customAccentColors.forEach((input, i) => {
+                if (i > 0) input.parentElement.classList.add('hidden');
+                else input.parentElement.classList.remove('hidden');
+            });
+        } else {
+            customAccentColors.forEach(input => input.parentElement.classList.remove('hidden'));
+        }
+    } else {
+        customPaletteEditor?.classList.add('hidden');
+    }
 
     // Preview toggle active state
     const desktopActive = state.previewMode === 'desktop';
