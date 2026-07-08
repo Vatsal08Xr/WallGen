@@ -335,6 +335,15 @@ function updateHeartUI() {
 }
 
 // ----- Render -----
+function render(width, height) {
+    const generatorFn = generators[state.theme];
+    if (!generatorFn) return;
+    
+    const colors = getColors();
+    const rng = seedrandom(state.seed);
+    generatorFn(ctx, width, height, colors, rng, state.themeOptions?.[state.theme]);
+}
+
 let renderTimeout;
 function triggerUpdate() {
     try { localStorage.setItem('wallgen_session', JSON.stringify(state)); } catch(e) {}
