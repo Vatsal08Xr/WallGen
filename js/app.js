@@ -39,12 +39,13 @@ let state = {
     palette: 'monochrome',
     isDark: true,
     previewMode: 'desktop',
+    isLocked: false,
+    isCustomPaletteOpen: false,
     seed: Math.random().toString(36).substring(2, 15),
     customPalette: {
         bg: '#18181b',
         colors: ['#3b82f6', '#8b5cf6', '#ec4899']
     },
-    isLocked: false,
     themeOptions: {
         particles: { num: 150 },
         waveInterference: { num: 3, amp: 100, thick: 2 },
@@ -277,7 +278,7 @@ function updateActiveUI() {
         }
     }
 
-    if (state.palette === 'custom') {
+    if (state.isCustomPaletteOpen) {
         customPaletteEditor.classList.remove('hidden');
         
         const customBgSection = document.getElementById('custom-bg-section');
@@ -319,6 +320,22 @@ function updateActiveUI() {
 
         wrapper.style.borderRadius = '32px';
     }
+    
+    // Sync Lock Button State
+    const lockIcon = btnLockPattern.querySelector('svg') || btnLockPattern.querySelector('i');
+    if (state.isLocked) {
+        lockIcon.setAttribute('data-lucide', 'lock');
+        btnLockPattern.classList.add('bg-zinc-900', 'text-white');
+        btnLockPattern.classList.remove('bg-white', 'text-black');
+        btnGenerate.innerHTML = '<i data-lucide="palette" class="w-4 h-4"></i> Generate Colors';
+    } else {
+        lockIcon.setAttribute('data-lucide', 'unlock');
+        btnLockPattern.classList.remove('bg-zinc-900', 'text-white');
+        btnLockPattern.classList.add('bg-white', 'text-black');
+        btnGenerate.innerHTML = '<i data-lucide="shuffle" class="w-4 h-4"></i> Generate Variation';
+    }
+    lucide.createIcons();
+    
     updateHeartUI();
 }
 
@@ -402,6 +419,7 @@ themeBtns.forEach(btn => {
 paletteBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         state.palette = btn.dataset.palette;
+        state.isCustomPaletteOpen = (state.palette === 'custom');
         updateActiveUI();
         updateHeartUI();
         triggerUpdate();
@@ -468,20 +486,9 @@ btnLockPattern.addEventListener('click', () => {
     btnLockPattern.classList.add('scale-75', 'opacity-50');
     
     setTimeout(() => {
-        const icon = btnLockPattern.querySelector('svg') || btnLockPattern.querySelector('i');
-        if (state.isLocked) {
-            icon.setAttribute('data-lucide', 'lock');
-            btnLockPattern.classList.add('bg-zinc-900', 'text-white');
-            btnLockPattern.classList.remove('bg-white', 'text-black');
-            btnGenerate.innerHTML = '<i data-lucide="palette" class="w-4 h-4"></i> Generate Colors';
-        } else {
-            icon.setAttribute('data-lucide', 'unlock');
-            btnLockPattern.classList.remove('bg-zinc-900', 'text-white');
-            btnLockPattern.classList.add('bg-white', 'text-black');
-            btnGenerate.innerHTML = '<i data-lucide="shuffle" class="w-4 h-4"></i> Generate Variation';
-        }
-        lucide.createIcons({ root: btnLockPattern.parentElement });
+        updateActiveUI();
         btnLockPattern.classList.remove('scale-75', 'opacity-50');
+        triggerUpdate();
     }, 150);
 });
 
