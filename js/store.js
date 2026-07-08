@@ -72,8 +72,8 @@ export function renderSavedModal(containerId, onRestore) {
             <div class="h-12 rounded-md w-full flex overflow-hidden border border-zinc-200 dark:border-zinc-800/50 opacity-80 group-hover:opacity-100 transition-opacity">
                 ${renderPalettePreview(item)}
             </div>
-            <button class="btn-delete-saved absolute -top-2 -right-2 bg-white dark:bg-zinc-800 rounded-full p-1 shadow-md border border-zinc-200 dark:border-zinc-700 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110" data-id="${item.id}">
-                <i data-lucide="x" class="w-3 h-3"></i>
+            <button class="btn-delete-saved absolute -top-2 -right-2 bg-black dark:bg-white rounded-full p-1 shadow-md border border-zinc-300 dark:border-zinc-600 transition-transform hover:scale-110 z-10" style="box-shadow: 0 0 8px rgba(239, 68, 68, 0.5), 0 0 3px rgba(239, 68, 68, 0.3);" data-id="${item.id}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.6));"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
     `).reverse().join('');
@@ -127,7 +127,8 @@ function getIconForTheme(theme) {
         nebula: 'cloud',
         gridGlitch: 'binary',
         flowField: 'wind',
-        orbitals: 'aperture'
+        orbitals: 'aperture',
+        shapes: 'shapes'
     };
     return icons[theme] || 'image';
 }
