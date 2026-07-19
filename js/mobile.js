@@ -401,7 +401,7 @@ function triggerUpdate() {
 }
 
 // ----- Event listeners -----
-mobileThemeBtns.forEach(btn => {
+document.querySelectorAll('#mobile-theme-grid .theme-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         state.theme = btn.dataset.theme;
         state.themeName = btn.dataset.name;
