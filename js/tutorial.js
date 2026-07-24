@@ -4,10 +4,10 @@ export function initTutorial() {
     const overlay = document.getElementById('tutorial-overlay');
     if (!overlay) return;
 
-    // Overlay is transparent and pointer-events-none; only the popup box captures clicks
+    // Overlay is transparent but captures clicks so user must use tutorial buttons
     overlay.style.cssText = '';
     overlay.className = "fixed inset-0 z-[100]";
-    overlay.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'auto';
 
     const steps = [
         {
@@ -55,9 +55,10 @@ export function initTutorial() {
             return;
         }
 
-        // Scroll button into view first
-        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Scroll button into view instantly to avoid bounding rect issues during smooth scroll
+        btn.scrollIntoView({ behavior: 'auto', block: 'center' });
 
+        // Small delay to ensure layout has settled (using auto scroll means it's instant)
         setTimeout(() => {
             const rect = btn.getBoundingClientRect();
             const btnCX = rect.left + rect.width / 2;
@@ -103,20 +104,28 @@ export function initTutorial() {
             overlay.appendChild(popup);
 
             // --- Attach event listeners AFTER element is in the DOM ---
-            const nextBtn = document.getElementById('tutorial-next-btn');
-            const skipBtn = document.getElementById('tutorial-skip-btn');
+            const nextBtn = popup.querySelector('#tutorial-next-btn');
+            const skipBtn = popup.querySelector('#tutorial-skip-btn');
+
+            const handleNext = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                advance();
+            };
+
+            const handleSkip = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                completeTutorial();
+            };
 
             if (nextBtn) {
-                nextBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    advance();
-                });
+                nextBtn.onclick = handleNext;
+                nextBtn.ontouchstart = handleNext;
             }
             if (skipBtn) {
-                skipBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    completeTutorial();
-                });
+                skipBtn.onclick = handleSkip;
+                skipBtn.ontouchstart = handleSkip;
             }
 
             // --- Position the popup ---
@@ -171,11 +180,25 @@ export function initTutorial() {
                     startY = popupRect.top;
                 }
 
-                // Arrow tip: stop just outside the button boundary
+                // Arrow tip: stop near the edge of the button
+                // Calculate intersection of line from start to center with the button's bounding box
+                const btnW2 = rect.width / 2;
+                const btnH2 = rect.height / 2;
+                
                 const dx = btnCX - startX;
                 const dy = btnCY - startY;
+                
+                let edgeOffset = 0;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // hits left/right edge
+                    edgeOffset = btnW2 + 5;
+                } else {
+                    // hits top/bottom edge
+                    edgeOffset = btnH2 + 5;
+                }
+                
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const stopDist = Math.max(0, dist - 18);
+                const stopDist = Math.max(0, dist - edgeOffset);
                 const tipX = startX + (dx / dist) * stopDist;
                 const tipY = startY + (dy / dist) * stopDist;
 
@@ -210,7 +233,7 @@ export function initTutorial() {
                 const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svgEl.setAttribute('width', '100%');
                 svgEl.setAttribute('height', '100%');
-                svgEl.style.position = 'absolute';
+                svgEl.style.position = 'fixed'; // Use fixed to match the overlay's bounds perfectly
                 svgEl.style.top = '0';
                 svgEl.style.left = '0';
                 svgEl.style.pointerEvents = 'none';
@@ -238,7 +261,7 @@ export function initTutorial() {
                 svgEl.appendChild(arrow);
                 overlay.appendChild(svgEl);
             });
-        }, 350);
+        }, 50);
     }
 
     function completeTutorial() {
