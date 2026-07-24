@@ -8,6 +8,7 @@ export function drawParticles(ctx, width, height, colors, rng, options = {}, int
     let particles;
     if (interactive && interactive.particles && interactive.particles.length > 0) {
         particles = interactive.particles;
+        particles.forEach((p, i) => { p.color = colors.colors[i % colors.colors.length]; });
     } else {
         particles = [];
         for (let i = 0; i < numParticles; i++) {

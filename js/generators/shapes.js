@@ -14,6 +14,7 @@ export function generate(ctx, width, height, colors, rng, options = {}, interact
 
     if (interactive && interactive.shapes && interactive.shapes.length > 0) {
         shapes = interactive.shapes;
+        shapes.forEach((s, i) => { s.color = colors.colors[i % colors.colors.length]; });
     } else {
         const totalShapes = numSquares + numTriangles + numCircles;
         const exactSizeIndices = new Set();

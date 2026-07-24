@@ -11,6 +11,7 @@ export function drawWaveInterference(ctx, width, height, colors, rng, options = 
 
     if (interactive && interactive.waves && interactive.waves.length > 0) {
         waves = interactive.waves;
+        waves.forEach((w, i) => { w.color = colors.colors[i % colors.colors.length]; });
     } else {
         const exactThickCount = Math.min(numWaves, Math.floor(rng() * 2) + 2); // 2 or 3 waves
         const exactThickIndices = new Set();
