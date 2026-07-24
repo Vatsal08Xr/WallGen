@@ -180,50 +180,58 @@ export function initTutorial() {
                     startY = popupRect.top;
                 }
 
-                // Arrow tip: stop near the edge of the button
-                // Calculate intersection of line from start to center with the button's bounding box
-                const btnW2 = rect.width / 2;
-                const btnH2 = rect.height / 2;
+                // Corners of the button
+                const corners = [
+                    { x: rect.left, y: rect.top },
+                    { x: rect.right, y: rect.top },
+                    { x: rect.left, y: rect.bottom },
+                    { x: rect.right, y: rect.bottom }
+                ];
                 
-                const dx = btnCX - startX;
-                const dy = btnCY - startY;
+                let tipX = corners[0].x, tipY = corners[0].y;
+                let minDist = Infinity;
+                corners.forEach(c => {
+                    const d = Math.hypot(c.x - startX, c.y - startY);
+                    if (d < minDist) {
+                        minDist = d;
+                        tipX = c.x;
+                        tipY = c.y;
+                    }
+                });
                 
-                let edgeOffset = 0;
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    // hits left/right edge
-                    edgeOffset = btnW2 + 5;
-                } else {
-                    // hits top/bottom edge
-                    edgeOffset = btnH2 + 5;
-                }
-                
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const stopDist = Math.max(0, dist - edgeOffset);
-                const tipX = startX + (dx / dist) * stopDist;
-                const tipY = startY + (dy / dist) * stopDist;
+                // Offset tip slightly outwards from the button center
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                tipX += Math.sign(tipX - cx) * 6;
+                tipY += Math.sign(tipY - cy) * 6;
 
-                // Control point for the quadratic bezier curve — offset perpendicular to the line
+                // Control point for the quadratic bezier curve
                 const midX = (startX + tipX) / 2;
                 const midY = (startY + tipY) / 2;
-                // Perpendicular offset for curve
-                const perpX = -(tipY - startY);
-                const perpY = (tipX - startX);
-                const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
-                const curvature = Math.min(40, dist * 0.3);
-                const cpX = midX + (perpX / perpLen) * curvature;
-                const cpY = midY + (perpY / perpLen) * curvature;
+                
+                const dxTip = tipX - startX;
+                const dyTip = tipY - startY;
+                const tipDist = Math.hypot(dxTip, dyTip) || 1;
+                
+                // Perpendicular vector for the curve
+                const perpX = -dyTip / tipDist;
+                const perpY = dxTip / tipDist;
+                const curvature = Math.min(30, tipDist * 0.2);
+                
+                const cpX = midX + perpX * curvature;
+                const cpY = midY + perpY * curvature;
 
                 // Compute the arrowhead direction from the tangent at t=1 of the quadratic bezier
                 // Tangent at t=1: 2*(P2 - P1) where P0=start, P1=cp, P2=tip
                 const tangentX = tipX - cpX;
                 const tangentY = tipY - cpY;
-                const tLen = Math.sqrt(tangentX * tangentX + tangentY * tangentY) || 1;
+                const tLen = Math.hypot(tangentX, tangentY) || 1;
                 const ux = tangentX / tLen;
                 const uy = tangentY / tLen;
 
                 // V-shaped arrowhead lines (inverted V pointing toward the button)
-                const headLen = 12;
-                const headAngle = Math.PI / 6; // 30 degrees
+                const headLen = 10;
+                const headAngle = Math.PI / 7; // Narrower V
 
                 const leftX = tipX - headLen * (ux * Math.cos(headAngle) - uy * Math.sin(headAngle));
                 const leftY = tipY - headLen * (uy * Math.cos(headAngle) + ux * Math.sin(headAngle));
@@ -246,14 +254,14 @@ export function initTutorial() {
                 path.setAttribute('fill', 'none');
                 path.setAttribute('stroke', strokeColor);
                 path.setAttribute('stroke-width', '2');
-                path.setAttribute('stroke-dasharray', '6 4');
+                path.setAttribute('stroke-dasharray', '3 4'); // Dotted line effect
 
                 // Arrowhead — two lines forming a V
                 const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 arrow.setAttribute('d', `M ${leftX} ${leftY} L ${tipX} ${tipY} L ${rightX} ${rightY}`);
                 arrow.setAttribute('fill', 'none');
                 arrow.setAttribute('stroke', strokeColor);
-                arrow.setAttribute('stroke-width', '2.5');
+                arrow.setAttribute('stroke-width', '2');
                 arrow.setAttribute('stroke-linecap', 'round');
                 arrow.setAttribute('stroke-linejoin', 'round');
 
