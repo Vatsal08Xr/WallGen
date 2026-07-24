@@ -410,6 +410,10 @@ document.querySelectorAll('#mobile-theme-grid .theme-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const newTheme = btn.dataset.theme;
         const oldTheme = state.theme;
+        
+        // If locked and clicking the same theme, do nothing
+        if (state.isLocked && newTheme === oldTheme) return;
+        
         state.theme = newTheme;
         state.themeName = btn.dataset.name;
         state.seed = Math.random().toString(36).substring(2, 15);
@@ -431,7 +435,6 @@ document.querySelectorAll('#mobile-palette-grid .palette-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         state.palette = btn.dataset.palette;
         state.isCustomPaletteOpen = (state.palette === 'custom');
-        state.interactiveObjects[state.theme] = {};
         updateUI();
         updateHeartUI();
         triggerUpdate();
@@ -445,7 +448,6 @@ const handleBgChange = (val, inputEl = null) => {
     }
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
         state.customPalette.bg = val;
-        state.interactiveObjects[state.theme] = {};
         updateCustomPaletteUI();
         updateHeartUI();
         triggerUpdate();
@@ -461,7 +463,6 @@ const handleAccentChange = (val, index, inputEl = null) => {
     }
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
         state.customPalette.colors[index] = val;
-        state.interactiveObjects[state.theme] = {};
         updateCustomPaletteUI();
         updateHeartUI();
         triggerUpdate();
@@ -486,7 +487,6 @@ const mobileWallpaperThemeLabel = document.getElementById('mobile-wallpaper-them
 mobileWallpaperThemeToggle?.addEventListener('click', () => {
     state.isWallpaperDark = !state.isWallpaperDark;
     if (mobileWallpaperThemeLabel) mobileWallpaperThemeLabel.textContent = state.isWallpaperDark ? 'Dark' : 'Light';
-    state.interactiveObjects[state.theme] = {};
     updateHeartUI();
     triggerUpdate();
 });
