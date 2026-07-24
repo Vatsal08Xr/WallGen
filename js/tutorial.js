@@ -4,7 +4,10 @@ export function initTutorial() {
     const overlay = document.getElementById('tutorial-overlay');
     if (!overlay) return;
 
-    overlay.className = "fixed inset-0 z-[100] bg-transparent transition-opacity";
+    // Overlay is transparent and pointer-events-none; only the popup box captures clicks
+    overlay.style.cssText = '';
+    overlay.className = "fixed inset-0 z-[100]";
+    overlay.style.pointerEvents = 'none';
 
     const steps = [
         {
@@ -26,6 +29,11 @@ export function initTutorial() {
 
     let currentStep = 0;
 
+    function advance() {
+        currentStep++;
+        renderStep();
+    }
+
     function renderStep() {
         if (currentStep >= steps.length) {
             completeTutorial();
@@ -33,13 +41,14 @@ export function initTutorial() {
         }
 
         overlay.innerHTML = '';
+        overlay.classList.remove('hidden');
         const step = steps[currentStep];
-        
+
         let btn = document.getElementById(step.desktopBtn);
         if (!btn || btn.offsetParent === null) {
             btn = document.getElementById(step.mobileBtn);
         }
-        
+
         if (!btn || btn.offsetParent === null) {
             currentStep++;
             renderStep();
@@ -53,120 +62,191 @@ export function initTutorial() {
             const rect = btn.getBoundingClientRect();
             const btnCX = rect.left + rect.width / 2;
             const btnCY = rect.top + rect.height / 2;
-            
-            const isMobile = window.innerWidth < 768;
+
             const isDark = document.documentElement.classList.contains('dark');
             const strokeColor = isDark ? '#ffffff' : '#000000';
-            
-            const svg = document.createElement('div');
-            svg.className = 'absolute inset-0 pointer-events-none';
-            svg.innerHTML = `
-                <svg width="100%" height="100%" style="overflow: visible;">
-                    <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                            <polygon points="0 0, 10 3.5, 0 7" fill="${strokeColor}" />
-                        </marker>
-                    </defs>
-                    <path d="" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowhead)" />
-                </svg>
-            `;
-            
-            const popup = document.createElement('div');
-            popup.className = `absolute transform -translate-x-1/2 -translate-y-1/2 rounded-xl p-4 shadow-2xl border-2 w-64 flex flex-col gap-3 pointer-events-auto
-                ${isDark ? 'bg-black text-white border-white' : 'bg-white text-black border-black'}`;
-            
-            // Initial dummy position
-            popup.style.left = `50%`;
-            popup.style.top = `50%`;
-            
-            popup.innerHTML = `
-                <div class="text-sm font-semibold flex justify-between items-center mb-1">
-                    <span>Tutorial</span>
-                    <span class="text-xs opacity-70">${currentStep + 1}/${steps.length}</span>
-                </div>
-                <p class="text-sm">${step.text}</p>
-                <div class="flex justify-end mt-2">
-                    <button id="tutorial-next-btn" class="px-4 py-1.5 text-sm rounded-full font-medium transition-colors
-                        ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-black text-white hover:bg-zinc-800'}">
-                        ${currentStep === steps.length - 1 ? 'Got it!' : 'Next'}
-                    </button>
-                </div>
-            `;
-            
-            overlay.appendChild(svg);
-            overlay.appendChild(popup);
-            
-            document.getElementById('tutorial-next-btn').addEventListener('click', () => {
-                currentStep++;
-                renderStep();
-            });
-            
-            // Compute correct positions
-            requestAnimationFrame(() => {
-                const pRect = popup.getBoundingClientRect();
-                
-                let targetX, targetY;
-                if (isMobile) {
-                    targetX = window.innerWidth / 2;
-                    if (btnCY < window.innerHeight / 2) {
-                        targetY = btnCY + pRect.height / 2 + 50;
-                    } else {
-                        targetY = btnCY - pRect.height / 2 - 50;
-                    }
-                } else {
-                    targetX = btnCX - pRect.width / 2 - 20; // Shifted further right
-                    targetY = btnCY;
-                    targetY = Math.max(pRect.height/2 + 20, Math.min(window.innerHeight - pRect.height/2 - 20, targetY));
-                }
-                
-                // Prevent popup from being cut off on the left or right edges
-                targetX = Math.max(pRect.width/2 + 10, Math.min(window.innerWidth - pRect.width/2 - 10, targetX));
-                
-                popup.style.left = `${targetX}px`;
-                popup.style.top = `${targetY}px`;
-                
-                requestAnimationFrame(() => {
-                    const newPRect = popup.getBoundingClientRect();
-                    
-                    let edgeX = targetX;
-                    let edgeY = targetY;
-                    
-                    if (btnCX > newPRect.right) edgeX = newPRect.right + 5;
-                    else if (btnCX < newPRect.left) edgeX = newPRect.left - 5;
-                    
-                    if (btnCY > newPRect.bottom) edgeY = newPRect.bottom + 5;
-                    else if (btnCY < newPRect.top) edgeY = newPRect.top - 5;
-                    
-                    // Curve approach
-                    let cpX = edgeX;
-                    let cpY = btnCY;
-                    
-                    let destX = btnCX;
-                    let destY = btnCY;
-                    
-                    if (btnCX > edgeX) destX -= 25;
-                    else if (btnCX < edgeX) destX += 25;
-                    
-                    if (Math.abs(btnCX - edgeX) < 40) {
-                        if (btnCY > edgeY) destY -= 25;
-                        else destY += 25;
-                        destX = btnCX;
-                    }
 
-                    const newPathData = `M ${edgeX} ${edgeY} Q ${cpX} ${cpY} ${destX} ${destY}`;
-                    overlay.querySelector('path').setAttribute('d', newPathData);
+            // --- Build popup ---
+            const popup = document.createElement('div');
+            popup.style.position = 'absolute';
+            popup.style.pointerEvents = 'auto';
+            popup.style.width = '260px';
+            popup.style.padding = '16px';
+            popup.style.borderRadius = '12px';
+            popup.style.border = `2px solid ${strokeColor}`;
+            popup.style.background = isDark ? '#000' : '#fff';
+            popup.style.color = isDark ? '#fff' : '#000';
+            popup.style.boxShadow = '0 10px 40px rgba(0,0,0,0.3)';
+            popup.style.zIndex = '10';
+            popup.style.display = 'flex';
+            popup.style.flexDirection = 'column';
+            popup.style.gap = '10px';
+            popup.style.fontFamily = 'inherit';
+
+            popup.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:14px;font-weight:600;">Tutorial</span>
+                    <span style="font-size:12px;opacity:0.6;">${currentStep + 1}/${steps.length}</span>
+                </div>
+                <p style="font-size:14px;line-height:1.5;margin:0;">${step.text}</p>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                    <span id="tutorial-skip-btn" style="font-size:13px;opacity:0.5;cursor:pointer;text-decoration:none;">Skip</span>
+                    <button id="tutorial-next-btn" style="
+                        padding:6px 18px;font-size:13px;border-radius:9999px;font-weight:500;cursor:pointer;
+                        border:none;
+                        background:${isDark ? '#fff' : '#000'};
+                        color:${isDark ? '#000' : '#fff'};
+                    ">${currentStep === steps.length - 1 ? 'Got it!' : 'Next'}</button>
+                </div>
+            `;
+
+            overlay.appendChild(popup);
+
+            // --- Attach event listeners AFTER element is in the DOM ---
+            const nextBtn = document.getElementById('tutorial-next-btn');
+            const skipBtn = document.getElementById('tutorial-skip-btn');
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    advance();
                 });
+            }
+            if (skipBtn) {
+                skipBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    completeTutorial();
+                });
+            }
+
+            // --- Position the popup ---
+            const isMobile = window.innerWidth < 768;
+            const popupW = 260;
+            const popupH = popup.offsetHeight || 180;
+
+            let px, py;
+            if (isMobile) {
+                px = (window.innerWidth - popupW) / 2;
+                if (btnCY < window.innerHeight / 2) {
+                    py = btnCY + rect.height / 2 + 40;
+                } else {
+                    py = btnCY - rect.height / 2 - popupH - 40;
+                }
+            } else {
+                // Place popup to the left of the button, shifted right enough to stay on screen
+                px = btnCX - popupW - 30;
+                py = btnCY - popupH / 2;
+            }
+
+            // Clamp to viewport
+            px = Math.max(12, Math.min(window.innerWidth - popupW - 12, px));
+            py = Math.max(12, Math.min(window.innerHeight - popupH - 12, py));
+
+            popup.style.left = px + 'px';
+            popup.style.top = py + 'px';
+
+            // --- Draw the curved arrow using an inline SVG ---
+            requestAnimationFrame(() => {
+                const popupRect = popup.getBoundingClientRect();
+
+                // Find the closest edge point of the popup to the button
+                let startX, startY;
+
+                // Determine which edge to start from
+                if (btnCX > popupRect.right) {
+                    // Button is to the right of popup
+                    startX = popupRect.right;
+                    startY = Math.max(popupRect.top + 10, Math.min(popupRect.bottom - 10, btnCY));
+                } else if (btnCX < popupRect.left) {
+                    // Button is to the left of popup
+                    startX = popupRect.left;
+                    startY = Math.max(popupRect.top + 10, Math.min(popupRect.bottom - 10, btnCY));
+                } else if (btnCY > popupRect.bottom) {
+                    // Button is below popup
+                    startX = Math.max(popupRect.left + 10, Math.min(popupRect.right - 10, btnCX));
+                    startY = popupRect.bottom;
+                } else {
+                    // Button is above popup
+                    startX = Math.max(popupRect.left + 10, Math.min(popupRect.right - 10, btnCX));
+                    startY = popupRect.top;
+                }
+
+                // Arrow tip: stop just outside the button boundary
+                const dx = btnCX - startX;
+                const dy = btnCY - startY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const stopDist = Math.max(0, dist - 18);
+                const tipX = startX + (dx / dist) * stopDist;
+                const tipY = startY + (dy / dist) * stopDist;
+
+                // Control point for the quadratic bezier curve — offset perpendicular to the line
+                const midX = (startX + tipX) / 2;
+                const midY = (startY + tipY) / 2;
+                // Perpendicular offset for curve
+                const perpX = -(tipY - startY);
+                const perpY = (tipX - startX);
+                const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
+                const curvature = Math.min(40, dist * 0.3);
+                const cpX = midX + (perpX / perpLen) * curvature;
+                const cpY = midY + (perpY / perpLen) * curvature;
+
+                // Compute the arrowhead direction from the tangent at t=1 of the quadratic bezier
+                // Tangent at t=1: 2*(P2 - P1) where P0=start, P1=cp, P2=tip
+                const tangentX = tipX - cpX;
+                const tangentY = tipY - cpY;
+                const tLen = Math.sqrt(tangentX * tangentX + tangentY * tangentY) || 1;
+                const ux = tangentX / tLen;
+                const uy = tangentY / tLen;
+
+                // V-shaped arrowhead lines (inverted V pointing toward the button)
+                const headLen = 12;
+                const headAngle = Math.PI / 6; // 30 degrees
+
+                const leftX = tipX - headLen * (ux * Math.cos(headAngle) - uy * Math.sin(headAngle));
+                const leftY = tipY - headLen * (uy * Math.cos(headAngle) + ux * Math.sin(headAngle));
+                const rightX = tipX - headLen * (ux * Math.cos(-headAngle) - uy * Math.sin(-headAngle));
+                const rightY = tipY - headLen * (uy * Math.cos(-headAngle) + ux * Math.sin(-headAngle));
+
+                const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svgEl.setAttribute('width', '100%');
+                svgEl.setAttribute('height', '100%');
+                svgEl.style.position = 'absolute';
+                svgEl.style.top = '0';
+                svgEl.style.left = '0';
+                svgEl.style.pointerEvents = 'none';
+                svgEl.style.overflow = 'visible';
+                svgEl.style.zIndex = '5';
+
+                // Curved line
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${startX} ${startY} Q ${cpX} ${cpY} ${tipX} ${tipY}`);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', strokeColor);
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('stroke-dasharray', '6 4');
+
+                // Arrowhead — two lines forming a V
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                arrow.setAttribute('d', `M ${leftX} ${leftY} L ${tipX} ${tipY} L ${rightX} ${rightY}`);
+                arrow.setAttribute('fill', 'none');
+                arrow.setAttribute('stroke', strokeColor);
+                arrow.setAttribute('stroke-width', '2.5');
+                arrow.setAttribute('stroke-linecap', 'round');
+                arrow.setAttribute('stroke-linejoin', 'round');
+
+                svgEl.appendChild(path);
+                svgEl.appendChild(arrow);
+                overlay.appendChild(svgEl);
             });
-        }, 300);
+        }, 350);
     }
 
     function completeTutorial() {
         localStorage.setItem('wallgen_tutorial_completed', '1');
-        overlay.classList.add('hidden');
         overlay.innerHTML = '';
-        overlay.className = "fixed inset-0 z-[100] pointer-events-none hidden";
+        overlay.classList.add('hidden');
     }
 
     // Wait a brief moment for the UI to settle before rendering
-    setTimeout(renderStep, 500);
+    setTimeout(renderStep, 600);
 }
