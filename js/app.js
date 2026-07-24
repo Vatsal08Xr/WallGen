@@ -545,9 +545,8 @@ btnLockPattern.addEventListener('click', () => {
 });
 
 btnSaveWallpaper.addEventListener('click', () => {
-    if (store.isSaved(state)) return; // Already saved — heart stays red
-    store.save(state);
-    updateHeartUI(); // Fill red immediately
+    store.toggleSave(state);
+    updateHeartUI();
 });
 
 

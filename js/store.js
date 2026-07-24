@@ -19,9 +19,9 @@ export const store = {
             return [];
         }
     },
-    isSaved(state) {
+    getSavedItem(state) {
         const saved = this.getSaved();
-        return saved.some(item => {
+        return saved.find(item => {
             if (item.theme !== state.theme || item.seed !== state.seed || item.palette !== state.palette) return false;
             if (state.palette === 'custom') {
                 if (!item.customPalette || !state.customPalette) return false;
@@ -30,6 +30,17 @@ export const store = {
             }
             return true;
         });
+    },
+    isSaved(state) {
+        return !!this.getSavedItem(state);
+    },
+    toggleSave(state) {
+        const item = this.getSavedItem(state);
+        if (item) {
+            this.remove(item.id);
+        } else {
+            this.save(state);
+        }
     },
     save(wallpaperState) {
         if (this.isSaved(wallpaperState)) return; // Prevent duplicates
