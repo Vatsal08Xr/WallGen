@@ -1,4 +1,6 @@
 import seedrandom from 'https://esm.sh/seedrandom@3.0.5';
+import { showToast } from './toast.js';
+import { initTutorial } from './tutorial.js';
 import { palettes } from './palettes.js';
 import { downloadCanvas } from './exportUtils.js';
 import { drawTopography } from './generators/topography.js';
@@ -435,13 +437,22 @@ window.addEventListener('resize', triggerUpdate);
 
 themeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        state.theme = btn.dataset.theme;
+        const newTheme = btn.dataset.theme;
+        const oldTheme = state.theme;
+        state.theme = newTheme;
         state.themeName = btn.dataset.name;
         state.seed = Math.random().toString(36).substring(2, 15);
         state.interactiveObjects[state.theme] = {};
         updateActiveUI();
         updateHeartUI();
         triggerUpdate();
+        
+        if (oldTheme !== newTheme && ['particles', 'shapes', 'waveInterference', 'landscape', 'geometricCity'].includes(newTheme)) {
+            if (!sessionStorage.getItem('wallgen_interactive_hint_' + newTheme)) {
+                showToast('Tip: You can drag elements on the canvas to move them!', 4000);
+                sessionStorage.setItem('wallgen_interactive_hint_' + newTheme, '1');
+            }
+        }
     });
 });
 
@@ -602,7 +613,10 @@ function init() {
     lucide.createIcons();
     if (wallpaperThemeLabel) wallpaperThemeLabel.textContent = state.isWallpaperDark ? 'Dark' : 'Light';
     updateActiveUI();
+    updateCustomPaletteUI();
     triggerUpdate();
+    
+    initTutorial();
     window.addEventListener('saved-wallpapers-changed', updateHeartUI);
 }
 

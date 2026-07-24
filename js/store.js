@@ -1,3 +1,5 @@
+import { palettes } from './palettes.js';
+
 export const store = {
     getSaved() {
         try {
@@ -105,13 +107,21 @@ export function renderSavedModal(containerId, onRestore) {
 }
 
 function renderPalettePreview(item) {
+    let bg, colors;
     if (item.palette === 'custom' && item.customPalette) {
-        return `
-            <div class="flex-1" style="background-color: ${item.customPalette.bg}"></div>
-            ${item.customPalette.colors.map(c => `<div class="flex-1" style="background-color: ${c}"></div>`).join('')}
-        `;
+        bg = item.customPalette.bg;
+        colors = item.customPalette.colors;
+    } else {
+        const mode = item.isWallpaperDark !== false ? 'dark' : 'light';
+        const preset = palettes[item.palette]?.[mode] || palettes.monochrome[mode];
+        bg = preset.bg;
+        colors = preset.colors;
     }
-    return `<div class="flex-1 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs text-zinc-400">Preset</div>`;
+    
+    return `
+        <div class="flex-1" style="background-color: ${bg}"></div>
+        ${colors.map(c => `<div class="flex-1" style="background-color: ${c}"></div>`).join('')}
+    `;
 }
 
 function getIconForTheme(theme) {
