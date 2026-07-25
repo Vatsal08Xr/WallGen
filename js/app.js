@@ -452,9 +452,9 @@ themeBtns.forEach(btn => {
         triggerUpdate();
         
         if (oldTheme !== newTheme && ['particles', 'shapes', 'waveInterference', 'landscape', 'geometricCity'].includes(newTheme)) {
-            if (!sessionStorage.getItem('wallgen_interactive_hint_' + newTheme)) {
+            if (!localStorage.getItem('wallgen_interactive_hint_shown')) {
                 showToast('Tip: You can drag elements on the canvas to move them!', 4000);
-                sessionStorage.setItem('wallgen_interactive_hint_' + newTheme, '1');
+                localStorage.setItem('wallgen_interactive_hint_shown', '1');
             }
         }
     });
