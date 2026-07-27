@@ -21,12 +21,11 @@ export function drawCrystals(ctx, width, height, colors, rng) {
         points.push([width - margin, t * height]);  // right
     }
     
-    // Fill the canvas with scattered points (mix of uniform + slight clustering)
+    // Cluster points around center (original style) to reduce packing at edges
     for (let i = 0; i < numPoints; i++) {
-        // Mostly uniform spread with a subtle bias toward center
-        const x = rng() * width;
-        const y = rng() * height;
-        points.push([x, y]);
+        const angle = rng() * Math.PI * 2;
+        const radius = Math.pow(rng(), 1.5) * Math.max(width, height) * 0.6;
+        points.push([width/2 + Math.cos(angle) * radius, height/2 + Math.sin(angle) * radius]);
     }
 
     const delaunay = Delaunator.from(points);
