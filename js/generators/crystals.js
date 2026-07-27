@@ -7,11 +7,26 @@ export function drawCrystals(ctx, width, height, colors, rng) {
     const numPoints = 150;
     const points = [];
     
-    // Cluster points around center
+    // Add boundary points along edges and corners to guarantee full canvas coverage
+    const margin = -10; // slight bleed past edges
+    // Corners
+    points.push([margin, margin], [width - margin, margin], [margin, height - margin], [width - margin, height - margin]);
+    // Edge points
+    const edgeSteps = 8;
+    for (let i = 0; i <= edgeSteps; i++) {
+        const t = i / edgeSteps;
+        points.push([t * width, margin]);          // top
+        points.push([t * width, height - margin]); // bottom
+        points.push([margin, t * height]);          // left
+        points.push([width - margin, t * height]);  // right
+    }
+    
+    // Fill the canvas with scattered points (mix of uniform + slight clustering)
     for (let i = 0; i < numPoints; i++) {
-        const angle = rng() * Math.PI * 2;
-        const radius = Math.pow(rng(), 1.5) * Math.max(width, height) * 0.6;
-        points.push([width/2 + Math.cos(angle) * radius, height/2 + Math.sin(angle) * radius]);
+        // Mostly uniform spread with a subtle bias toward center
+        const x = rng() * width;
+        const y = rng() * height;
+        points.push([x, y]);
     }
 
     const delaunay = Delaunator.from(points);
