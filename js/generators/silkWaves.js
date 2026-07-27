@@ -1,114 +1,126 @@
-import { createNoise2D } from 'https://esm.sh/simplex-noise@4.0.1';
+import { createNoise3D } from 'https://esm.sh/simplex-noise@4.0.1';
 
 export function drawSilkWaves(ctx, width, height, colors, rng) {
-    const noise2D = createNoise2D(rng);
+    // Fill background
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
 
-    function hexToRgb(hex) {
-        if (!hex) return [0, 0, 0];
-        if (hex.length === 9) hex = hex.substring(0, 7);
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
-    }
-
-    const bgRgb = hexToRgb(colors.bg);
-    const accentRgbs = colors.colors.map(hexToRgb);
-
-    // Noise parameters — scale inversely with canvas size for consistent visual density
-    const baseScale = 0.003 * (1000 / Math.max(width, height));
-    // Band frequency — controls ribbon density, scales with resolution
-    const bandFreq = Math.max(15, Math.round(30 * Math.min(width, height) / 1000));
-
-    // Random phase offsets for domain warping (unique per generation)
-    const px1 = rng() * 100, py1 = rng() * 100;
-    const px2 = rng() * 100, py2 = rng() * 100;
-
-    // Helper: compute domain-warped noise at a pixel position
-    function warpedNoise(px, py) {
-        const nx = px * baseScale;
-        const ny = py * baseScale;
-        // Two-pass domain warp for complex, organic folding
-        const w1 = noise2D(nx + px1, ny + py1) * 0.8;
-        const w2 = noise2D(nx + px2, ny + py2) * 0.8;
-        return noise2D(nx + w1, ny + w2);
-    }
-
-    // ---- Pass 1: Pre-compute the noise field ----
-    const field = new Float32Array(width * height);
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            field[y * width + x] = warpedNoise(x, y);
+    const noise3D = createNoise3D(rng);
+    
+    // Scale noise based on canvas size for consistent swirling
+    const noiseScale = 0.002 * (1000 / Math.max(width, height));
+    const zOffset = rng() * 100;
+    
+    // Number of paths controls density
+    // Reduce slightly on mobile for performance while keeping it dense
+    const isMobile = Math.max(width, height) < 800;
+    const numPaths = isMobile ? 1500 : 3000;
+    
+    const paths = [];
+    const maxSteps = 80;
+    const stepSize = Math.max(width, height) * 0.005;
+    
+    // Generate all paths first
+    for (let i = 0; i < numPaths; i++) {
+        let x = rng() * width * 1.2 - width * 0.1; // seed slightly outside canvas
+        let y = rng() * height * 1.2 - height * 0.1;
+        
+        const path = [];
+        path.push({ x, y });
+        
+        for (let j = 0; j < maxSteps; j++) {
+            // Strong angular multiplier (Math.PI * 6) forces deep, tight swirling
+            const angle = noise3D(x * noiseScale, y * noiseScale, zOffset) * Math.PI * 6;
+            x += Math.cos(angle) * stepSize;
+            y += Math.sin(angle) * stepSize;
+            path.push({ x, y });
+            
+            // Stop early if well outside bounds
+            if (x < -width*0.2 || x > width*1.2 || y < -height*0.2 || y > height*1.2) break;
         }
+        
+        // Randomize width for organic variety (some thick ribbons, some thin threads)
+        const baseWidth = (rng() * 0.015 + 0.002) * Math.max(width, height);
+        
+        // Pick an accent color
+        const accentHex = colors.colors[Math.floor(rng() * colors.colors.length)];
+        
+        paths.push({ vertices: path, baseWidth, accentHex });
     }
+    
+    // Sort paths by length so shorter ones (details) tend to sit on top of longer sweeps
+    // Or just random order is fine too since they all overlap organically. 
+    // We'll shuffle them slightly to avoid clumps from the generation loop.
+    paths.sort(() => rng() - 0.5);
 
-    // ---- Lighting setup ----
-    // Light direction (upper-left, slightly behind viewer)
-    const lx = 0.35, ly = -0.65, lz = 0.55;
-    const ll = Math.sqrt(lx * lx + ly * ly + lz * lz);
-    const ldx = lx / ll, ldy = ly / ll, ldz = lz / ll;
+    // Color mixing helpers
+    function mix(hex1, hex2, ratio) {
+        if (!hex1) hex1 = '#000000';
+        if (!hex2) hex2 = '#ffffff';
+        if (hex1.length === 9) hex1 = hex1.substring(0, 7);
+        if (hex2.length === 9) hex2 = hex2.substring(0, 7);
+        const r1 = parseInt(hex1.slice(1,3), 16) || 0, g1 = parseInt(hex1.slice(3,5), 16) || 0, b1 = parseInt(hex1.slice(5,7), 16) || 0;
+        const r2 = parseInt(hex2.slice(1,3), 16) || 0, g2 = parseInt(hex2.slice(3,5), 16) || 0, b2 = parseInt(hex2.slice(5,7), 16) || 0;
+        return `rgb(${Math.round(r1 + (r2-r1)*ratio)}, ${Math.round(g1 + (g2-g1)*ratio)}, ${Math.round(b1 + (b2-b1)*ratio)})`;
+    }
+    
+    // Check if background is light or dark to adjust shadows/highlights
+    const bgR = parseInt(colors.bg.slice(1,3), 16) || 0;
+    const bgG = parseInt(colors.bg.slice(3,5), 16) || 0;
+    const bgB = parseInt(colors.bg.slice(5,7), 16) || 0;
+    const isLightMode = (bgR * 0.299 + bgG * 0.587 + bgB * 0.114) > 186;
 
-    // Blinn-Phong half-vector (view direction = (0, 0, 1))
-    const hvx = ldx, hvy = ldy, hvz = ldz + 1;
-    const hvl = Math.sqrt(hvx * hvx + hvy * hvy + hvz * hvz);
-    const hx = hvx / hvl, hy = hvy / hvl, hz = hvz / hvl;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-    // ---- Pass 2: Shade each pixel ----
-    const imgData = ctx.createImageData(width, height);
-    const data = imgData.data;
-
-    // Controls how steep the surface appears (higher = more pronounced 3D)
-    const shadingStrength = 5.0;
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const i = y * width + x;
-            const nc = field[i];
-
-            // Band height at this pixel (sine creates parallel ribbon bands)
-            const hc = Math.sin(nc * bandFreq);
-
-            // Forward-difference gradient of the band surface
-            const nr = x < width - 1 ? field[i + 1] : nc;
-            const nd = y < height - 1 ? field[i + width] : nc;
-            const hr = Math.sin(nr * bandFreq);
-            const hd = Math.sin(nd * bandFreq);
-
-            const dhdx = (hr - hc) * shadingStrength;
-            const dhdy = (hd - hc) * shadingStrength;
-
-            // Surface normal from height-field gradient
-            const nmag = Math.sqrt(dhdx * dhdx + dhdy * dhdy + 1);
-            const nnx = -dhdx / nmag;
-            const nny = -dhdy / nmag;
-            const nnz = 1 / nmag;
-
-            // Diffuse (Lambertian)
-            const diffuse = Math.max(0, nnx * ldx + nny * ldy + nnz * ldz);
-
-            // Specular (Blinn-Phong) — tight highlight for silk sheen
-            const specDot = Math.max(0, nnx * hx + nny * hy + nnz * hz);
-            const spec = Math.pow(specDot, 50) * 0.45;
-
-            // Combined brightness
-            const ambient = 0.04;
-            const brightness = ambient + diffuse * 0.50 + spec;
-
-            // Choose accent color based on the raw noise value
-            const ci = Math.floor(Math.abs(nc * 3 + 0.5)) % accentRgbs.length;
-            const accent = accentRgbs[ci];
-
-            // Final color: dark bg tinted toward accent, intensity driven by lighting
-            const tint = brightness * 0.55;
-            const r = bgRgb[0] + (accent[0] - bgRgb[0]) * tint + 255 * spec * 0.12;
-            const g = bgRgb[1] + (accent[1] - bgRgb[1]) * tint + 255 * spec * 0.12;
-            const b = bgRgb[2] + (accent[2] - bgRgb[2]) * tint + 255 * spec * 0.12;
-
-            const idx = i * 4;
-            data[idx]     = Math.min(255, Math.max(0, r));
-            data[idx + 1] = Math.min(255, Math.max(0, g));
-            data[idx + 2] = Math.min(255, Math.max(0, b));
-            data[idx + 3] = 255;
+    // Draw passes
+    for (const pathObj of paths) {
+        const { vertices, baseWidth, accentHex } = pathObj;
+        if (vertices.length < 2) continue;
+        
+        // Define path once per ribbon
+        ctx.beginPath();
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        for (let i = 1; i < vertices.length; i++) {
+            // Smooth curve through points
+            const curr = vertices[i];
+            const prev = vertices[i-1];
+            const mx = (prev.x + curr.x) / 2;
+            const my = (prev.y + curr.y) / 2;
+            ctx.quadraticCurveTo(prev.x, prev.y, mx, my);
         }
+        // Connect to last point
+        ctx.lineTo(vertices[vertices.length-1].x, vertices[vertices.length-1].y);
+        
+        // 1. Base shape with heavy drop shadow (Deep 3D effect)
+        ctx.shadowColor = isLightMode ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur = baseWidth * 1.5;
+        ctx.shadowOffsetX = baseWidth * 0.2;
+        ctx.shadowOffsetY = baseWidth * 0.2;
+        
+        ctx.lineWidth = baseWidth;
+        // Base color is mostly background to blend, slightly tinted by accent
+        ctx.strokeStyle = mix(colors.bg, accentHex, 0.15);
+        ctx.stroke();
+        
+        // Clear shadow for subsequent layers
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // 2. Mid-tone body (adds color and rounds the shape)
+        ctx.lineWidth = baseWidth * 0.6;
+        ctx.strokeStyle = mix(colors.bg, accentHex, 0.4);
+        ctx.stroke();
+        
+        // 3. Highlight ridge (creates the sharp, folded ribbon edge)
+        // Offset slightly to simulate directional lighting
+        const offset = baseWidth * 0.15;
+        ctx.translate(-offset, -offset);
+        ctx.lineWidth = baseWidth * 0.15;
+        ctx.strokeStyle = isLightMode ? mix(accentHex, '#ffffff', 0.4) : mix(accentHex, '#ffffff', 0.25);
+        ctx.stroke();
+        ctx.translate(offset, offset);
     }
-
-    ctx.putImageData(imgData, 0, 0);
 }
