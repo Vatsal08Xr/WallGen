@@ -17,7 +17,6 @@ import { drawFlowField } from './generators/flowField.js';
 import { drawOrbitals } from './generators/orbitals.js';
 import { generate as drawShapes } from './generators/shapes.js';
 import { drawFluidArt } from './generators/fluidArt.js';
-import { drawSilkWaves } from './generators/silkWaves.js';
 import { store, renderSavedModal } from './store.js';
 import { generateRandomPalette } from './colorUtils.js';
 import { getHitTarget as particlesHit } from './generators/particles.js';
@@ -40,8 +39,7 @@ const generators = {
     flowField: drawFlowField,
     orbitals: drawOrbitals,
     shapes: drawShapes,
-    fluidArt: drawFluidArt,
-    silkWaves: drawSilkWaves
+    fluidArt: drawFluidArt
 };
 
 // ----- Elements -----
