@@ -21,17 +21,19 @@ export function drawCrystals(ctx, width, height, colors, rng) {
         points.push([width - margin, t * height]);  // right
     }
     
+    const baseDim = Math.max(width, height);
+    
     // Cluster points around center (original style) to reduce packing at edges
     for (let i = 0; i < numPoints; i++) {
         const angle = rng() * Math.PI * 2;
-        const radius = Math.pow(rng(), 1.5) * Math.max(width, height) * 0.6;
+        const radius = Math.pow(rng(), 1.5) * baseDim * 0.6;
         points.push([width/2 + Math.cos(angle) * radius, height/2 + Math.sin(angle) * radius]);
     }
 
     const delaunay = Delaunator.from(points);
     const triangles = delaunay.triangles;
     
-    ctx.lineWidth = width * 0.001;
+    ctx.lineWidth = baseDim * 0.001;
     ctx.lineJoin = 'round';
 
     for (let i = 0; i < triangles.length; i += 3) {

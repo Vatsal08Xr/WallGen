@@ -22,11 +22,13 @@ export function drawTopography(ctx, width, height, colors, rng) {
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;
     
+    const baseDim = Math.max(width, height);
+    
     // Parameters for domain warping (Zebra / Marble effect)
     // Scale must decrease as resolution increases to maintain the same visual size
-    const baseScale = 0.0015 * (1000 / Math.max(width, height)); 
-    // Scale band count with canvas size so mobile gets fewer, less congested bands
-    const bandFrequency = Math.max(12, Math.round(60 * Math.min(width, height) / 1000));
+    const baseScale = 0.0015 * (1000 / baseDim); 
+    // Scale band count with canvas size so mobile gets proportionally fewer bands without shrinking them
+    const bandFrequency = Math.max(12, Math.round(60 * baseDim / 1000));
     const phaseX = rng() * 100;
     const phaseY = rng() * 100;
     

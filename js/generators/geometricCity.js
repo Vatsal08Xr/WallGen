@@ -2,9 +2,12 @@ export function drawGeometricCity(ctx, width, height, colors, rng, options, inte
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
 
-    const numBuildings = 60;
-    const padding = width * 0.02;
-    const maxW = (width - padding * 2) / (numBuildings * 0.5);
+    const baseDim = Math.max(width, height);
+    
+    // Scale number of buildings proportionally to width so they don't get squished on mobile
+    const numBuildings = Math.round(60 * (width / baseDim));
+    const padding = baseDim * 0.02;
+    const maxW = (baseDim - padding * 2) / (60 * 0.5);
 
     // Draw background sun/moon
     ctx.fillStyle = colors.colors[Math.floor(rng() * colors.colors.length)];
@@ -22,7 +25,7 @@ export function drawGeometricCity(ctx, width, height, colors, rng, options, inte
     } else {
         sunX = genSunX;
         sunY = height * 0.4;
-        sunRadius = Math.min(width, height) * 0.27;
+        sunRadius = baseDim * 0.15; // 0.27 of min(w,h) is roughly 0.15 of max(w,h)
         if (interactive) {
             interactive.sun = { x: sunX, y: sunY, radius: sunRadius };
         }
@@ -48,37 +51,50 @@ export function drawGeometricCity(ctx, width, height, colors, rng, options, inte
 
     for (const b of buildings) {
         const y = height - b.h;
-        const color = colors.colors[b.colorIndex];
         
-        const grad = ctx.createLinearGradient(b.x, y, b.x, height);
-        grad.addColorStop(0, color);
-        grad.addColorStop(1, colors.bg);
-        
-        ctx.fillStyle = grad;
+        ctx.fillStyle = colors.colors[b.colorIndex];
         ctx.fillRect(b.x, y, b.w, b.h);
         
-        // Outline
+        // Darken side
+        ctx.fillStyle = colors.bg;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(b.x + b.w * 0.6, y, b.w * 0.4, b.h);
+        ctx.globalAlpha = 1.0;
+        
+        // Building outline
         ctx.strokeStyle = colors.bg;
-        ctx.lineWidth = width * 0.001;
+        ctx.lineWidth = baseDim * 0.001;
         ctx.strokeRect(b.x, y, b.w, b.h);
         
         // Windows
-        if (rng() > 0.3 && b.w > width * 0.02) {
-            ctx.fillStyle = colors.colors[(b.colorIndex + 1) % colors.colors.length];
+        if (rng() > 0.3 && b.w > baseDim * 0.01) {
+            ctx.fillStyle = colors.bg;
             ctx.globalAlpha = 0.8;
-            ctx.fillRect(b.x + b.w * 0.2, y + b.h * 0.05, b.w * 0.2, b.h * 0.05);
+            const rows = Math.floor(b.h / (baseDim * 0.015));
+            const cols = 2;
+            const wPadding = b.w * 0.15;
+            const windowW = (b.w - wPadding * 3) / 2;
+            const windowH = baseDim * 0.005;
+            
+            for (let r = 1; r < rows; r++) {
+                if (rng() > 0.3) {
+                    ctx.fillRect(b.x + wPadding, y + r * (baseDim * 0.015), windowW, windowH);
+                }
+                if (rng() > 0.3) {
+                    ctx.fillRect(b.x + wPadding * 2 + windowW, y + r * (baseDim * 0.015), windowW, windowH);
+                }
+            }
             ctx.globalAlpha = 1.0;
         }
     }
 }
 
 export function getHitTarget(x, y, objects) {
-    if (objects && objects.sun) {
+    if (objects.sun) {
         const dx = x - objects.sun.x;
         const dy = y - objects.sun.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < objects.sun.radius) {
-            return 'sun';
+        if (Math.sqrt(dx*dx + dy*dy) <= objects.sun.radius) {
+            return { id: 'sun', type: 'sun', cursor: 'grab' };
         }
     }
     return null;

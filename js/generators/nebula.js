@@ -5,6 +5,7 @@ export function drawNebula(ctx, width, height, colors, rng) {
     ctx.fillRect(0, 0, width, height);
 
     const noise3D = createNoise3D(rng);
+    const baseDim = Math.max(width, height);
     
     // Reduce number of clouds slightly for performance, radial gradient is rich enough
     const numClouds = 150; 
@@ -36,11 +37,12 @@ export function drawNebula(ctx, width, height, colors, rng) {
         const x = rng() * width;
         const y = rng() * height;
         
-        const n = noise3D(x * 0.0015, y * 0.0015, zOffset);
+        // Scale noise input proportionally
+        const n = noise3D(x * 0.0015 * (1920 / baseDim), y * 0.0015 * (1920 / baseDim), zOffset);
         
         if (n > -0.3) {
-            // Using a circular radius instead of ellipse to perfectly use createRadialGradient
-            const radius = Math.max(width * 0.1, n * width * 0.4);
+            // Use baseDim so clouds are perfectly circular and same relative size on mobile/desktop
+            const radius = Math.max(baseDim * 0.1, n * baseDim * 0.4);
             
             const colorIndex = Math.floor((n + 1) * 0.5 * colors.colors.length);
             const color = colors.colors[Math.min(colorIndex, colors.colors.length - 1)];

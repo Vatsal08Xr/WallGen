@@ -7,13 +7,14 @@ export function drawOrbitals(ctx, width, height, colors, rng) {
     
     const numOrbits = 35;
     const maxRadius = Math.max(width, height) * 0.7;
+    const baseDim = Math.max(width, height);
     
     for (let i = 0; i < numOrbits; i++) {
         const radius = (rng() * 0.9 + 0.1) * maxRadius;
         const color = colors.colors[Math.floor(rng() * colors.colors.length)];
         
         ctx.strokeStyle = color;
-        ctx.lineWidth = width * 0.001;
+        ctx.lineWidth = baseDim * 0.001;
         
         const isFull = rng() > 0.6;
         const startAngle = rng() * Math.PI * 2;
@@ -31,7 +32,7 @@ export function drawOrbitals(ctx, width, height, colors, rng) {
             
             ctx.fillStyle = colors.colors[Math.floor(rng() * colors.colors.length)];
             ctx.beginPath();
-            ctx.arc(px, py, width * 0.002 * (rng() * 3 + 1), 0, Math.PI * 2);
+            ctx.arc(px, py, baseDim * 0.002 * (rng() * 3 + 1), 0, Math.PI * 2);
             ctx.fill();
             
             // Subtle glow/halo
@@ -39,7 +40,7 @@ export function drawOrbitals(ctx, width, height, colors, rng) {
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.globalAlpha = 0.3;
                 ctx.beginPath();
-                ctx.arc(px, py, width * 0.006 * (rng() * 2 + 1), 0, Math.PI * 2);
+                ctx.arc(px, py, baseDim * 0.006 * (rng() * 2 + 1), 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.globalAlpha = 1.0;
             }
@@ -49,6 +50,6 @@ export function drawOrbitals(ctx, width, height, colors, rng) {
     // Core/Sun
     ctx.fillStyle = colors.colors[Math.floor(rng() * colors.colors.length)];
     ctx.beginPath();
-    ctx.arc(cx, cy, Math.min(width, height) * 0.04, 0, Math.PI * 2);
+    ctx.arc(cx, cy, baseDim * 0.015, 0, Math.PI * 2);
     ctx.fill();
 }

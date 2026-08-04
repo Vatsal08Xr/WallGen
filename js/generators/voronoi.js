@@ -4,7 +4,11 @@ export function drawVoronoi(ctx, width, height, colors, rng) {
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
     
-    const numPoints = 120;
+    const baseDim = Math.max(width, height);
+    
+    // Scale number of points proportionally with the screen area to keep density consistent
+    const areaRatio = (width * height) / (baseDim * baseDim);
+    const numPoints = Math.round(150 * areaRatio * 1.5);
     const points = [];
     
     for (let i = 0; i < numPoints; i++) {
@@ -12,7 +16,7 @@ export function drawVoronoi(ctx, width, height, colors, rng) {
     }
     
     // Add points outside the canvas to fill the edges properly
-    const pad = width * 0.2;
+    const pad = baseDim * 0.2;
     points.push([-pad, -pad], [width/2, -pad], [width + pad, -pad]);
     points.push([-pad, height/2], [width + pad, height/2]);
     points.push([-pad, height + pad], [width/2, height + pad], [width + pad, height + pad]);
@@ -21,7 +25,7 @@ export function drawVoronoi(ctx, width, height, colors, rng) {
     const triangles = delaunay.triangles;
     
     // Slight line width to cover gaps between triangles
-    ctx.lineWidth = width * 0.001;
+    ctx.lineWidth = baseDim * 0.001;
     ctx.lineJoin = 'round';
     
     for (let i = 0; i < triangles.length; i += 3) {

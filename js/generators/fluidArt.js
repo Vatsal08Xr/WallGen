@@ -105,8 +105,7 @@ float cellular(vec2 p) {
 }
 
 void main() {
-    vec2 st = gl_FragCoord.xy / u_resolution.xy;
-    st.x *= u_resolution.x / u_resolution.y; 
+    vec2 st = gl_FragCoord.xy / max(u_resolution.x, u_resolution.y);
     
     // Add seed offset to completely change the generation
     st += vec2(u_seed * 10.0);

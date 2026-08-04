@@ -4,13 +4,14 @@ export function drawFlowField(ctx, width, height, colors, rng) {
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
 
+    const baseDim = Math.max(width, height);
     const noise3D = createNoise3D(rng);
     const numParticles = 2500;
     const maxSteps = 120;
-    const scale = 0.0015;
-    const stepSize = Math.min(width, height) * 0.005;
+    const scale = 0.0015 * (1920 / baseDim);
+    const stepSize = baseDim * 0.003;
 
-    ctx.lineWidth = width * 0.001;
+    ctx.lineWidth = baseDim * 0.001;
     ctx.lineCap = 'round';
     
     // Draw subtle gradient background overlay to frame the flow

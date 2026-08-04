@@ -6,12 +6,14 @@ export function drawLandscape(ctx, width, height, colors, rng, options, interact
 
     const noise2D = createNoise2D(rng);
     
+    const baseDim = Math.max(width, height);
+    
     // Draw sun/moon
     const sunColor = colors.colors[Math.floor(rng() * colors.colors.length)];
     ctx.fillStyle = sunColor;
     ctx.beginPath();
     
-    const sunRadius = Math.min(width, height) * 0.135;
+    const sunRadius = baseDim * 0.08;
     let sunX, sunY;
     if (interactive && interactive.sun) {
         sunX = interactive.sun.x;
@@ -34,10 +36,10 @@ export function drawLandscape(ctx, width, height, colors, rng, options, interact
         
         // Layers progress downwards
         const yBase = height * 0.45 + (height * 0.5) * (i / (numLayers - 1));
-        const noiseScale = 0.002 * (1 + i * 0.3);
-        const noiseHeight = height * (0.15 - i * 0.015);
+        const noiseScale = 0.002 * (1 + i * 0.3) * (1920 / baseDim);
+        const noiseHeight = baseDim * (0.08 - i * 0.008);
 
-        for (let x = -10; x <= width + 10; x += width * 0.01) {
+        for (let x = -10; x <= width + 10; x += baseDim * 0.01) {
             // Add multi-scale noise for jagged mountains in background, smooth hills in foreground
             let n = noise2D(x * noiseScale, i * 100);
             if (i < 3) {

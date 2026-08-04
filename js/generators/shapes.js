@@ -31,7 +31,8 @@ export function generate(ctx, width, height, colors, rng, options = {}, interact
                 const isExactSize = exactSizeIndices.has(shapeIndex);
                 const isExactThick = exactThickIndices.has(shapeIndex);
                 
-                const baseRadius = sizeScale * 0.07 * Math.min(width, height);
+                const baseDim = Math.max(width, height);
+                const baseRadius = sizeScale * 0.04 * baseDim;
                 const radius = isExactSize ? baseRadius : baseRadius * (1 - (0.05 + rng() * 0.15));
                 
                 const shapeThick = isExactThick ? userThick : userThick * (1 - (0.01 + rng() * 0.02));

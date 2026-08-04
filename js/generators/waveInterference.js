@@ -1,8 +1,8 @@
 export function drawWaveInterference(ctx, width, height, colors, rng, options = {}, interactive = null) {
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
-    
-    const numWaves = options.num !== undefined ? options.num : Math.max(8, Math.round(45 * height / 2160));
+    const baseDim = Math.max(width, height);
+    const numWaves = options.num !== undefined ? options.num : Math.max(8, Math.round(45 * height / 1920));
     
     // Fallback if thick not provided is ~4 for 1920 width, so we set default userThick to 2.
     const userThick = options.thick !== undefined ? options.thick : 2;
@@ -31,8 +31,9 @@ export function drawWaveInterference(ctx, width, height, colors, rng, options = 
             
             const yCenter = (height * 0.1) + (rng() * height * 0.8);
             const ampScale = options.amp !== undefined ? options.amp / 100 : 1.0;
-            const amplitude = (rng() * 0.20 + 0.06) * height * ampScale;
-            const frequency = (rng() * 1.5 + 0.5) * 0.01;
+            const amplitude = (rng() * 0.15 + 0.03) * baseDim * ampScale;
+            // Adjust frequency slightly based on aspect ratio to keep waves visually similar
+            const frequency = (rng() * 1.5 + 0.5) * 0.01 * (1920 / baseDim);
             const phase = rng() * Math.PI * 2;
             
             waves.push({ yCenter, amplitude, frequency, phase, color, waveThick, xOffset: 0 });
@@ -45,12 +46,12 @@ export function drawWaveInterference(ctx, width, height, colors, rng, options = 
     for (let i = 0; i < waves.length; i++) {
         const w = waves[i];
         ctx.strokeStyle = w.color;
-        ctx.lineWidth = Math.max(1, w.waveThick * (width / 1920));
+        ctx.lineWidth = Math.max(1, w.waveThick * (baseDim / 1920));
         
         ctx.beginPath();
         let started = false;
         
-        for (let x = -width * 0.05; x <= width * 1.05; x += width * 0.005) {
+        for (let x = -width * 0.05; x <= width * 1.05; x += baseDim * 0.005) {
             const shiftedX = x - (w.xOffset || 0);
             const y = w.yCenter + 
                       Math.sin(shiftedX * w.frequency + w.phase) * w.amplitude + 

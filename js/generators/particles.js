@@ -2,8 +2,12 @@ export function drawParticles(ctx, width, height, colors, rng, options = {}, int
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, width, height);
     
-    const numParticles = options.num || 150;
-    const maxDistance = Math.min(width, height) * 0.15;
+    const baseDim = Math.max(width, height);
+    
+    // Scale number of particles proportionally with the screen area to keep density consistent
+    const areaRatio = (width * height) / (baseDim * baseDim);
+    const numParticles = Math.round((options.num || 150) * areaRatio * 1.5);
+    const maxDistance = baseDim * 0.08;
     
     let particles;
     if (interactive && interactive.particles && interactive.particles.length > 0) {
@@ -15,14 +19,14 @@ export function drawParticles(ctx, width, height, colors, rng, options = {}, int
             particles.push({
                 x: rng() * width,
                 y: rng() * height,
-                radius: (rng() * 0.003 + 0.001) * Math.min(width, height),
+                radius: (rng() * 0.003 + 0.001) * baseDim,
                 color: colors.colors[Math.floor(rng() * colors.colors.length)]
             });
         }
     }
     if (interactive) interactive.particles = particles;
     
-    ctx.lineWidth = width * 0.0005;
+    ctx.lineWidth = baseDim * 0.0005;
     
     // Draw connections
     for (let i = 0; i < numParticles; i++) {
